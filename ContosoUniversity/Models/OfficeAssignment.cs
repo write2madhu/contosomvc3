@@ -9,7 +9,7 @@ namespace ContosoUniversity.Models
     public class OfficeAssignment
     {
         [Key]
-        public int InstructorID { get; set; }
+        public int PersonID { get; set; }
 
         [MaxLength(50)]
         [Display(Name = "Office Location")]
