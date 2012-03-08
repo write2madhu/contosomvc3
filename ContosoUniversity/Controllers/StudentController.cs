@@ -13,7 +13,17 @@ namespace ContosoUniversity.Controllers
 { 
     public class StudentController : Controller
     {
-        private SchoolContext db = new SchoolContext();
+        private IStudentRepository studentRepository;
+
+        public StudentController()
+        {
+            this.studentRepository = new StudentRepository(new SchoolContext());
+        }
+
+        public StudentController(IStudentRepository studentRepository)
+        {
+            this.studentRepository = studentRepository;
+        }
 
         //
         // GET: /Student/
@@ -35,7 +45,7 @@ namespace ContosoUniversity.Controllers
 
             ViewBag.CurrentFilter = searchString;
 
-            var students = from s in db.Students
+            var students = from s in studentRepository.GetStudents()
                            select s;
 
             if (!String.IsNullOrEmpty(searchString))
@@ -71,7 +81,7 @@ namespace ContosoUniversity.Controllers
 
         public ViewResult Details(int id)
         {
-            Student student = db.Students.Find(id);
+            Student student = studentRepository.GetStudentByID(id);
             return View(student);
         }
 
@@ -93,8 +103,8 @@ namespace ContosoUniversity.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    db.Students.Add(student);
-                    db.SaveChanges();
+                    studentRepository.InsertStudent(student);
+                    studentRepository.Save();
                     return RedirectToAction("Index");
                 }
             }
@@ -112,7 +122,7 @@ namespace ContosoUniversity.Controllers
  
         public ActionResult Edit(int id)
         {
-            Student student = db.Students.Find(id);
+            Student student = studentRepository.GetStudentByID(id);
             return View(student);
         }
 
@@ -126,8 +136,8 @@ namespace ContosoUniversity.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    db.Entry(student).State = EntityState.Modified;
-                    db.SaveChanges();
+                    studentRepository.UpdateStudent(student);
+                    studentRepository.Save();
                     return RedirectToAction("Index");
                 }
             }
@@ -150,7 +160,8 @@ namespace ContosoUniversity.Controllers
                 ViewBag.ErrorMessage = "Unable to save changes. Try again, and if the problem persists see your system administrator.";
             }
 
-            return View(db.Students.Find(id));
+            Student student = studentRepository.GetStudentByID(id);
+            return View(student);
         }
 
         //
@@ -161,9 +172,9 @@ namespace ContosoUniversity.Controllers
         {
             try
             {
-                Student student = db.Students.Find(id);
-                db.Students.Remove(student);
-                db.SaveChanges();
+                Student student = studentRepository.GetStudentByID(id);
+                studentRepository.DeleteStudent(id);
+                studentRepository.Save();
             }
             catch (DataException)
             {
@@ -179,7 +190,7 @@ namespace ContosoUniversity.Controllers
 
         protected override void Dispose(bool disposing)
         {
-            db.Dispose();
+            studentRepository.Dispose();
             base.Dispose(disposing);
         }
     }
