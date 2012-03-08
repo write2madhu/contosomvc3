@@ -17,19 +17,29 @@ namespace ContosoUniversity.Controllers
         //
         // GET: /Course/
 
-        public ViewResult Index()
+        public ActionResult Index(int? SelectedDepartment)
         {
-            var courses = unitOfWork.CourseRepository.Get(includeProperties: "Department");
-            return View(courses.ToList());
+            var departments = unitOfWork.DepartmentRepository.Get(
+                orderBy: q => q.OrderBy(d => d.Name));
+
+            ViewBag.SelectedDepartment = new SelectList(departments, "DepartmentID", "Name", SelectedDepartment);
+
+            int departmentID = SelectedDepartment.GetValueOrDefault();
+
+            return View(unitOfWork.CourseRepository.Get(
+                filter: d => !SelectedDepartment.HasValue || d.DepartmentID == departmentID,
+                orderBy: q => q.OrderBy(d => d.CourseID),
+                includeProperties: "Department"));
         }
 
         //
         // GET: /Course/Details/5
 
-        public ViewResult Details(int id)
+        public ActionResult Details(int id)
         {
-            Course course = unitOfWork.CourseRepository.GetByID(id);
-            return View(course);
+            var query = "SELECT * FROM Course WHERE CourseID = @p0";
+
+            return View(unitOfWork.CourseRepository.GetWithRawSql(query, id).Single());
         }
 
         public ActionResult Create()
@@ -129,6 +139,16 @@ namespace ContosoUniversity.Controllers
         {
             unitOfWork.Dispose();
             base.Dispose(disposing);
+        }
+
+        public ActionResult UpdateCourseCredits(int? multiplier)
+        {
+            if (multiplier != null)
+            {
+                ViewBag.RowsAffected = unitOfWork.CourseRepository.UpdateCourseCredits(multiplier.Value);
+            }
+
+            return View();
         }
     }
 }
